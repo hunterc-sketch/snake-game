@@ -146,6 +146,7 @@ header h1 {
     align-items: center;
     border-radius: 10px;
     transition: opacity 0.3s ease;
+    z-index: 10; /* 确保遮罩层在最上层 */
 }
 
 .overlay.hidden {
@@ -158,6 +159,14 @@ header h1 {
     border-radius: 15px;
     text-align: center;
     box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+    position: relative;
+    z-index: 11; /* 确保内容在遮罩层之上 */
+    pointer-events: auto; /* 确保可以点击 */
+}
+
+.overlay-content button {
+    pointer-events: auto; /* 确保按钮可以点击 */
+    cursor: pointer;
 }
 
 .overlay-content h2 {

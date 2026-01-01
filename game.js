@@ -108,6 +108,11 @@ function draw() {
 // ========== 更新游戏状态 ==========
 function update() {
     if (!gameRunning || gamePaused) return;
+    
+    // 如果方向为 0，0（静止状态），不更新，等待玩家按方向键
+    if (direction.x === 0 && direction.y === 0) {
+        return;
+    }
 
     // 计算蛇头的新位置
     const head = { x: snake[0].x + direction.x, y: snake[0].y + direction.y };
@@ -118,8 +123,8 @@ function update() {
         return;
     }
 
-    // 检查是否撞到自己
-    if (snake.some(segment => segment.x === head.x && segment.y === head.y)) {
+    // 检查是否撞到自己（排除蛇头本身）
+    if (snake.some((segment, index) => index > 0 && segment.x === head.x && segment.y === head.y)) {
         gameOver();
         return;
     }
@@ -146,7 +151,13 @@ function gameMainLoop() {
 
 // ========== 开始游戏 ==========
 function startGame() {
-    if (gameRunning) return;
+    // 如果游戏正在运行且未暂停，则不重复启动
+    if (gameRunning && !gamePaused) return;
+    
+    // 确保清除之前的游戏循环
+    if (gameLoop) {
+        clearInterval(gameLoop);
+    }
     
     gameRunning = true;
     gamePaused = false;
@@ -179,6 +190,7 @@ function resetGame() {
     // 停止游戏循环
     if (gameLoop) {
         clearInterval(gameLoop);
+        gameLoop = null; // 清除引用
     }
     
     // 重置游戏状态
@@ -205,11 +217,69 @@ function resetGame() {
     draw();
 }
 
+// ========== 重新开始游戏 ==========
+function restartGame() {
+    console.log('restartGame 函数被调用'); // 调试信息
+    
+    // 确保停止所有游戏循环
+    if (gameLoop) {
+        clearInterval(gameLoop);
+        gameLoop = null;
+    }
+    
+    // 重置游戏状态
+    snake = [{ x: 10, y: 10 }];
+    direction = { x: 0, y: 0 }; // 初始方向为静止，等待玩家按方向键
+    score = 0;
+    scoreElement.textContent = score;
+    gameRunning = false;
+    gamePaused = false;
+    
+    // 隐藏游戏结束遮罩层（必须在设置游戏状态之前）
+    if (gameOverOverlay) {
+        gameOverOverlay.classList.add('hidden');
+    }
+    if (gamePausedOverlay) {
+        gamePausedOverlay.classList.add('hidden');
+    }
+    
+    // 生成新食物
+    generateFood();
+    
+    // 重新绘制
+    draw();
+    
+    // 重置按钮状态
+    if (startBtn) startBtn.disabled = false;
+    if (pauseBtn) {
+        pauseBtn.disabled = true;
+        pauseBtn.textContent = '暂停';
+    }
+    
+    // 等待一小段时间确保 DOM 更新完成，然后开始游戏
+    setTimeout(() => {
+        // 开始新游戏（直接设置状态，不通过 startGame 的检查）
+        gameRunning = true;
+        gamePaused = false;
+        if (startBtn) startBtn.disabled = true;
+        if (pauseBtn) {
+            pauseBtn.disabled = false;
+            pauseBtn.textContent = '暂停';
+        }
+        
+        // 开始游戏循环
+        gameLoop = setInterval(gameMainLoop, 150);
+        
+        console.log('游戏已重新开始，gameRunning:', gameRunning, 'gameLoop:', gameLoop); // 调试信息
+    }, 50);
+}
+
 // ========== 游戏结束 ==========
 function gameOver() {
     gameRunning = false;
     if (gameLoop) {
         clearInterval(gameLoop);
+        gameLoop = null; // 清除引用
     }
     
     // 保存最高分
@@ -272,10 +342,41 @@ document.addEventListener('keydown', (e) => {
 startBtn.addEventListener('click', startGame);
 pauseBtn.addEventListener('click', togglePause);
 resetBtn.addEventListener('click', resetGame);
-restartBtn.addEventListener('click', () => {
-    resetGame();
-    startGame();
-});
+
+// 确保 restartBtn 存在后再绑定事件
+if (restartBtn) {
+    restartBtn.addEventListener('click', function(e) {
+        console.log('再来一局按钮被点击'); // 调试信息
+        
+        // 阻止事件冒泡
+        e.stopPropagation();
+        
+        // 调用重新开始函数
+        restartGame();
+        
+        // 返回 false 阻止默认行为
+        return false;
+    }, false);
+    
+    // 也尝试使用 mousedown 事件作为备选
+    restartBtn.addEventListener('mousedown', function(e) {
+        e.stopPropagation();
+    });
+} else {
+    console.error('restartBtn 元素未找到！');
+}
+
+// 使用事件委托，在 gameOverOverlay 上监听点击事件
+if (gameOverOverlay) {
+    gameOverOverlay.addEventListener('click', function(e) {
+        // 如果点击的是 restartBtn 或其内部元素
+        if (e.target && (e.target.id === 'restartBtn' || e.target.closest('#restartBtn'))) {
+            console.log('通过事件委托检测到再来一局按钮点击');
+            e.stopPropagation();
+            restartGame();
+        }
+    });
+}
 
 // ========== 初始化游戏 ==========
 loadHighScore(); // 加载最高分
