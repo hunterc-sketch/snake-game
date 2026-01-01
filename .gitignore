@@ -1,0 +1,35 @@
+# macOS 系统文件
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# 编辑器配置文件（可选，如果你想分享编辑器配置可以删除这些）
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# 日志文件
+*.log
+
+# 临时文件
+*.tmp
+*.temp
+
+# 如果以后使用 Node.js（目前不需要，但先准备好）
+node_modules/
+npm-debug.log
+yarn-error.log
+
+# 如果以后使用 Python（目前不需要，但先准备好）
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+
